@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPL Copyright Detector 🔍</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Prompt', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #1a0033 0%, #380066 50%, #4a0080 100%);
+        }
+
+        .epl-gradient {
+            background: linear-gradient(135deg, #38003c 0%, #00ff85 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .drop-zone {
+            border: 3px dashed #00ff85;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #fff;
+            background: rgba(0, 255, 133, 0.1);
+            transform: scale(1.02);
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #00ff85, transparent);
+            animation: scan 2s linear infinite;
+            box-shadow: 0 0 20px #00ff85;
+        }
+
+        @keyframes scan {
+            0% { top: 0; opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-card {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .detection-box {
+            position: absolute;
+            border: 3px solid;
+            border-radius: 8px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .confidence-bar {
+            transition: width 1s ease-out;
+        }
+
+        .glow-green {
+            box-shadow: 0 0 20px rgba(0, 255, 133, 0.5);
+        }
+
+        .glow-red {
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+        }
+
+        .prohibited-logo {
+            transition: all 0.3s ease;
+        }
+
+        .prohibited-logo:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <!-- Header -->
+    <header class="py-6 px-4 border-b border-purple-800">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-green-400 rounded-xl flex items-center justify-center text-2xl font-bold">
+                    ⚽
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold epl-gradient">EPL Copyright Detector</h1>
+                    <p class="text-purple-300 text-sm">ตรวจสอบภาพโปรโมทให้ปลอดภัยจากลิขสิทธิ์</p>
+                </div>
+            </div>
+            <div class="hidden md:flex items-center gap-2 bg-purple-900/50 px-4 py-2 rounded-full">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span class="text-sm">AI Powered</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-8">
+        <!-- Prohibited Logos Reference -->
+        <div class="mb-8 bg-purple-900/30 rounded-2xl p-6 border border-purple-700">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span class="text-red-400">⚠️</span>
+                Logo ที่ห้ามปรากฏในภาพโปรโมท EPL
+            </h2>
+            <div class="flex flex-wrap gap-4">
+                <div class="prohibited-logo bg-purple-800/50 p-4 rounded-xl text-center">
+                    <div class="text-4xl mb-2">🏆</div>
+                    <p class="text-sm text-purple-300">UCL Logo</p>
+                </div>
+                <div class="prohibited-logo bg-purple-800/50 p-4 rounded-xl text-center">
+                    <div class="text-4xl mb-2">⭐</div>
+                    <p class="text-sm text-purple-300">UEFA Logo</p>
+                </div>
+                <div class="prohibited-logo bg-purple-800/50 p-4 rounded-xl text-center">
+                    <div class="text-4xl mb-2">🌍</div>
+                    <p class="text-sm text-purple-300">FIFA Logo</p>
+                </div>
+                <div class="prohibited-logo bg-purple-800/50 p-4 rounded-xl text-center">
+                    <div class="text-4xl mb-2">🎯</div>
+                    <p class="text-sm text-purple-300">La Liga Logo</p>
+                </div>
+                <div class="prohibited-logo bg-purple-800/50 p-4 rounded-xl text-center">
+                    <div class="text-4xl mb-2">🦁</div>
+                    <p class="text-sm text-purple-300">Serie A Logo</p>
+                </div>
+                <div class="prohibited-logo bg-purple-800/50 p-4 rounded-xl text-center">
+                    <div class="text-4xl mb-2">🍺</div>
+                    <p class="text-sm text-purple-300">Sponsor ต้องห้าม</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Drop Zone -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold">📤 อัปโหลดภาพ</h2>
+                <div id="dropZone" class="drop-zone rounded-2xl p-8 text-center cursor-pointer min-h-[300px] flex flex-col items-center justify-center bg-purple-900/20">
+                    <div class="text-6xl mb-4">🖼️</div>
+                    <p class="text-lg mb-2">ลากไฟล์มาวางที่นี่</p>
+                    <p class="text-purple-400 text-sm mb-4">หรือ</p>
+                    <label class="bg-gradient-to-r from-purple-600 to-green-500 px-6 py-3 rounded-full cursor-pointer hover:opacity-90 transition font-medium">
+                        เลือกไฟล์
+                        <input type="file" id="fileInput" accept="image/*" class="hidden">
+                    </label>
+                    <p class="text-purple-400 text-xs mt-4">รองรับ: JPG, PNG, WebP (สูงสุด 10MB)</p>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold">🔍 ผลการตรวจสอบ</h2>
+                <div id="previewSection" class="bg-purple-900/20 rounded-2xl p-4 min-h-[300px] flex items-center justify-center border border-purple-700">
+                    <div id="placeholderText" class="text-center text-purple-400">
+                        <div class="text-6xl mb-4">📷</div>
+                        <p>รอภาพเพื่อตรวจสอบ...</p>
+                    </div>
+                    <div id="imageContainer" class="relative hidden w-full">
+                        <img id="previewImage" class="w-full rounded-xl" alt="Preview">
+                        <div id="scanLine" class="scan-line hidden"></div>
+                        <div id="detectionOverlay" class="absolute inset-0"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scan Button -->
+        <div class="text-center my-8">
+            <button id="scanBtn" disabled class="bg-gradient-to-r from-purple-600 to-green-500 px-12 py-4 rounded-full text-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-green-500/30 transition transform hover:scale-105 disabled:hover:scale-100">
+                🔬 เริ่มตรวจสอบ
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden space-y-6">
+            <!-- Overall Status -->
+            <div id="overallStatus" class="rounded-2xl p-6 border-2">
+                <!-- Dynamic content -->
+            </div>
+
+            <!-- Detection Details -->
+            <div id="detectionDetails" class="space-y-4">
+                <!-- Dynamic content -->
+            </div>
+
+            <!-- Recommendations -->
+            <div id="recommendations" class="bg-purple-900/30 rounded-2xl p-6 border border-purple-700">
+                <h3 class="text-lg font-semibold mb-4">💡 คำแนะนำ</h3>
+                <div id="recommendationsList" class="space-y-2">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 py-6 border-t border-purple-800 text-center text-purple-400 text-sm">
+        <p>⚽ EPL Copyright Detector - สร้างด้วย ❤️ สำหรับทีมครีเอทีฟ</p>
+        <p class="mt-2">⚠️ ระบบนี้เป็นเครื่องมือช่วยตรวจสอบเบื้องต้น กรุณาตรวจสอบเพิ่มเติมก่อนใช้งานจริง</p>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 right-8 transform translate-x-full transition-transform duration-300">
+        <div id="toastContent" class="px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
+            <span id="toastIcon" class="text-2xl"></span>
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script>
+        // Prohibited logos database (simulated)
+        const prohibitedLogos = [
+            { id: 'ucl', name: 'UEFA Champions League', severity: 'high', icon: '🏆' },
+            { id: 'uefa', name: 'UEFA Logo', severity: 'high', icon: '⭐' },
+            { id: 'fifa', name: 'FIFA Logo', severity: 'high', icon: '🌍' },
+            { id: 'laliga', name: 'La Liga', severity: 'medium', icon: '🎯' },
+            { id: 'seriea', name: 'Serie A', severity: 'medium', icon: '🦁' },
+            { id: 'sponsor', name: 'Prohibited Sponsor', severity: 'medium', icon: '🍺' },
+            { id: 'bundesliga', name: 'Bundesliga', severity: 'medium', icon: '🇩🇪' },
+            { id: 'ligue1', name: 'Ligue 1', severity: 'medium', icon: '🇫🇷' }
+        ];
+
+        // DOM Elements
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewImage = document.getElementById('previewImage');
+        const imageContainer = document.getElementById('imageContainer');
+        const placeholderText = document.getElementById('placeholderText');
+        const scanBtn = document.getElementById('scanBtn');
+        const scanLine = document.getElementById('scanLine');
+        const detectionOverlay = document.getElementById('detectionOverlay');
+        const resultsSection = document.getElementById('resultsSection');
+
+        let currentImage = null;
+
+        // Drag and Drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('❌', 'ไฟล์ใหญ่เกินไป (สูงสุด 10MB)', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                previewImage.src = currentImage;
+                imageContainer.classList.remove('hidden');
+                placeholderText.classList.add('hidden');
+                scanBtn.disabled = false;
+                detectionOverlay.innerHTML = '';
+                resultsSection.classList.add('hidden');
+                showToast('✅', 'อัปโหลดสำเร็จ! พร้อมตรวจสอบ', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Scan functionality
+        scanBtn.addEventListener('click', startScan);
+
+        async function startScan() {
+            scanBtn.disabled = true;
+            scanBtn.textContent = '🔄 กำลังตรวจสอบ...';
+            scanLine.classList.remove('hidden');
+            detectionOverlay.innerHTML = '';
+            resultsSection.classList.add('hidden');
+
+            showToast('🔍', 'กำลังวิเคราะห์ภาพด้วย AI...', 'info');
+
+            // Simulate AI processing
+            await sleep(1500);
+
+            // Simulate detection results
+            const detections = simulateDetection();
+
+            // Show results
+            await showDetections(detections);
+
+            scanLine.classList.add('hidden');
+            scanBtn.disabled = false;
+            scanBtn.textContent = '🔬 เริ่มตรวจสอบ';
+        }
+
+        function simulateDetection() {
+            // Simulate random detections for demo
+            const detections = [];
+            const numDetections = Math.floor(Math.random() * 4); // 0-3 detections
+
+            for (let i = 0; i < numDetections; i++) {
+                const logo = prohibitedLogos[Math.floor(Math.random() * prohibitedLogos.length)];
+                detections.push({
+                    logo: logo,
+                    confidence: 60 + Math.floor(Math.random() * 35), // 60-95%
+                    location: {
+                        x: 10 + Math.random() * 60, // percentage
+                        y: 10 + Math.random() * 60,
+                        width: 15 + Math.random() * 15,
+                        height: 15 + Math.random() * 15
+                    }
+                });
+            }
+
+            return detections;
+        }
+
+        async function showDetections(detections) {
+            resultsSection.classList.remove('hidden');
+
+            const overallStatus = document.getElementById('overallStatus');
+            const detectionDetails = document.getElementById('detectionDetails');
+            const recommendationsList = document.getElementById('recommendationsList');
+
+            if (detections.length === 0) {
+                // All clear!
+                overallStatus.className = 'rounded-2xl p-6 border-2 border-green-500 bg-green-500/10 glow-green alert-card';
+                overallStatus.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="text-6xl">✅</div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-green-400">ผ่านการตรวจสอบ!</h3>
+                            <p class="text-green-300">ไม่พบ logo หรือเครื่องหมายที่ละเมิดลิขสิทธิ์ในภาพนี้</p>
+                            <p class="text-sm text-purple-400 mt-2">ความมั่นใจโดยรวม: 98%</p>
+                        </div>
+                    </div>
+                `;
+
+                detectionDetails.innerHTML = '';
+                recommendationsList.innerHTML = `
+                    <div class="flex items-start gap-3 text-green-300">
+                        <span>✓</span>
+                        <span>ภาพนี้พร้อมใช้งานสำหรับโปรโมท EPL</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-purple-300">
+                        <span>💡</span>
+                        <span>แนะนำให้ตรวจสอบครั้งสุดท้ายด้วยตาเปล่าก่อนเผยแพร่</span>
+                    </div>
+                `;
+
+                showToast('✅', 'ไม่พบการละเมิดลิขสิทธิ์!', 'success');
+            } else {
+                // Found violations!
+                overallStatus.className = 'rounded-2xl p-6 border-2 border-red-500 bg-red-500/10 glow-red alert-card';
+                overallStatus.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="text-6xl">⚠️</div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-red-400">พบ ${detections.length} รายการที่ต้องแก้ไข!</h3>
+                            <p class="text-red-300">กรุณาตรวจสอบและแก้ไขก่อนใช้งาน</p>
+                        </div>
+                    </div>
+                `;
+
+                // Draw detection boxes on image
+                detections.forEach((detection, index) => {
+                    const box = document.createElement('div');
+                    box.className = 'detection-box';
+                    box.style.left = detection.location.x + '%';
+                    box.style.top = detection.location.y + '%';
+                    box.style.width = detection.location.width + '%';
+                    box.style.height = detection.location.height + '%';
+                    box.style.borderColor = detection.logo.severity === 'high' ? '#ff0055' : '#ffaa00';
+                    box.style.backgroundColor = detection.logo.severity === 'high' ? 'rgba(255,0,85,0.2)' : 'rgba(255,170,0,0.2)';
+
+                    // Add label
+                    const label = document.createElement('div');
+                    label.className = 'absolute -top-8 left-0 px-2 py-1 rounded text-xs whitespace-nowrap';
+                    label.style.backgroundColor = detection.logo.severity === 'high' ? '#ff0055' : '#ffaa00';
+                    label.style.color = '#fff';
+                    label.textContent = `${detection.logo.icon} ${detection.confidence}%`;
+                    box.appendChild(label);
+
+                    detectionOverlay.appendChild(box);
+                });
+
+                // Show detection cards
+                detectionDetails.innerHTML = detections.map((detection, index) => `
+                    <div class="alert-card bg-purple-900/50 rounded-xl p-4 border ${detection.logo.severity === 'high' ? 'border-red-500' : 'border-yellow-500'}">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="text-4xl">${detection.logo.icon}</span>
+                                <div>
+                                    <h4 class="font-semibold ${detection.logo.severity === 'high' ? 'text-red-400' : 'text-yellow-400'}">
+                                        ${detection.logo.name}
+                                    </h4>
+                                    <p class="text-sm text-purple-300">
+                                        ${detection.logo.severity === 'high' ? '🔴 ความรุนแรงสูง' : '🟡 ความรุนแรงปานกลาง'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold ${detection.confidence > 80 ? 'text-red-400' : 'text-yellow-400'}">
+                                    ${detection.confidence}%
+                                </div>
+                                <div class="text-xs text-purple-400">ความมั่นใจ</div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="h-2 bg-purple-800 rounded-full overflow-hidden">
+                                <div class="confidence-bar h-full rounded-full ${detection.confidence > 80 ? 'bg-red-500' : 'bg-yellow-500'}"
+                                     style="width: ${detection.confidence}%"></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-sm text-purple-300">
+                            📍 ตำแหน่ง: บริเวณ ${getLocationDescription(detection.location)}
+                        </div>
+                    </div>
+                `).join('');
+
+                recommendationsList.innerHTML = `
+                    <div class="flex items-start gap-3 text-red-300">
+                        <span>❌</span>
+                        <span>ห้ามใช้ภาพนี้โดยไม่แก้ไข - อาจเกิดปัญหาลิขสิทธิ์</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-yellow-300">
+                        <span>✂️</span>
+                        <span>ครอปหรือปิดบังบริเวณที่แสดงไว้</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-purple-300">
+                        <span>🔄</span>
+                        <span>ใช้ภาพอื่นที่ไม่มี logo ต้องห้าม</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-purple-300">
+                        <span>👀</span>
+                        <span>ส่งให้ทีมกฎหมายตรวจสอบเพิ่มเติม</span>
+                    </div>
+                `;
+
+                showToast('⚠️', `พบ ${detections.length} รายการที่ต้องแก้ไข!`, 'warning');
+            }
+        }
+
+        function getLocationDescription(location) {
+            const x = location.x + location.width / 2;
+            const y = location.y + location.height / 2;
+
+            let horizontal = x < 33 ? 'ซ้าย' : x > 66 ? 'ขวา' : 'กลาง';
+            let vertical = y < 33 ? 'บน' : y > 66 ? 'ล่าง' : 'กลาง';
+
+            if (horizontal === 'กลาง' && vertical === 'กลาง') return 'กลางภาพ';
+            return `${vertical}${horizontal}`;
+        }
+
+        function showToast(icon, message, type) {
+            const toast = document.getElementById('toast');
+            const toastContent = document.getElementById('toastContent');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toastIcon.textContent = icon;
+            toastMessage.textContent = message;
+
+            const colors = {
+                success: 'bg-green-600',
+                error: 'bg-red-600',
+                warning: 'bg-yellow-600',
+                info: 'bg-blue-600'
+            };
+
+            toastContent.className = `px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${colors[type]}`;
+
+            toast.classList.remove('translate-x-full');
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Initialize
+        console.log('🔍 EPL Copyright Detector loaded!');
+    </script>
+</body>
+</html>
