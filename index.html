@@ -7,86 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            font-family: 'Prompt', sans-serif;
-        }
-
-        .gradient-bg {
-            background: linear-gradient(135deg, #1a0033 0%, #380066 50%, #4a0080 100%);
-        }
-
-        .epl-gradient {
-            background: linear-gradient(135deg, #38003c 0%, #00ff85 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .drop-zone {
-            border: 3px dashed #00ff85;
-            transition: all 0.3s ease;
-        }
-
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: #fff;
-            background: rgba(0, 255, 133, 0.1);
-            transform: scale(1.02);
-        }
-
-        .scan-line {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, #00ff85, transparent);
-            animation: scan 2s linear infinite;
-            box-shadow: 0 0 20px #00ff85;
-        }
-
-        @keyframes scan {
-            0% { top: 0; opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .alert-card {
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        .detection-box {
-            position: absolute;
-            border: 3px solid;
-            border-radius: 8px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .confidence-bar {
-            transition: width 1s ease-out;
-        }
-
-        .glow-green {
-            box-shadow: 0 0 20px rgba(0, 255, 133, 0.5);
-        }
-
-        .glow-red {
-            box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
-        }
-
-        .prohibited-logo {
-            transition: all 0.3s ease;
-        }
-
-        .prohibited-logo:hover {
-            transform: scale(1.1);
-        }
+        * { font-family: 'Prompt', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #1a0033 0%, #380066 50%, #4a0080 100%); }
+        .epl-gradient { background: linear-gradient(135deg, #38003c 0%, #00ff85 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .drop-zone { border: 3px dashed #00ff85; transition: all 0.3s ease; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #fff; background: rgba(0, 255, 133, 0.1); transform: scale(1.02); }
+        .scan-line { position: absolute; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #00ff85, transparent); animation: scan 2s linear infinite; box-shadow: 0 0 20px #00ff85; }
+        @keyframes scan { 0% { top: 0; opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .alert-card { animation: fadeIn 0.5s ease-out; }
+        .detection-box { position: absolute; border: 3px solid; border-radius: 8px; animation: pulse 1.5s infinite; }
+        .confidence-bar { transition: width 1s ease-out; }
+        .glow-green { box-shadow: 0 0 20px rgba(0, 255, 133, 0.5); }
+        .glow-red { box-shadow: 0 0 20px rgba(255, 0, 85, 0.5); }
+        .prohibited-logo { transition: all 0.3s ease; }
+        .prohibited-logo:hover { transform: scale(1.1); }
+        .modal { backdrop-filter: blur(8px); }
+        .spinner { animation: spin 1s linear infinite; }
+        .api-status { transition: all 0.3s ease; }
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white">
@@ -94,20 +34,133 @@
     <header class="py-6 px-4 border-b border-purple-800">
         <div class="max-w-6xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-green-400 rounded-xl flex items-center justify-center text-2xl font-bold">
-                    ⚽
-                </div>
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-green-400 rounded-xl flex items-center justify-center text-2xl font-bold">⚽</div>
                 <div>
                     <h1 class="text-2xl font-bold epl-gradient">EPL Copyright Detector</h1>
                     <p class="text-purple-300 text-sm">ตรวจสอบภาพโปรโมทให้ปลอดภัยจากลิขสิทธิ์</p>
                 </div>
             </div>
-            <div class="hidden md:flex items-center gap-2 bg-purple-900/50 px-4 py-2 rounded-full">
-                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                <span class="text-sm">AI Powered</span>
+            <div class="flex items-center gap-4">
+                <div id="apiStatusBadge" class="hidden md:flex items-center gap-2 bg-purple-900/50 px-4 py-2 rounded-full cursor-pointer hover:bg-purple-800/50 transition" onclick="openSettings()">
+                    <span id="apiStatusDot" class="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                    <span id="apiStatusText" class="text-sm">Demo Mode</span>
+                </div>
+                <button onclick="openSettings()" class="p-2 hover:bg-purple-800/50 rounded-lg transition" title="ตั้งค่า API">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+        <div class="bg-purple-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-purple-700 flex items-center justify-between">
+                <h2 class="text-xl font-bold">⚙️ ตั้งค่า API</h2>
+                <button onclick="closeSettings()" class="p-2 hover:bg-purple-800 rounded-lg transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- Provider Selection -->
+                <div>
+                    <label class="block text-sm font-medium mb-3">เลือก AI Provider</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <label class="provider-option cursor-pointer">
+                            <input type="radio" name="provider" value="demo" class="hidden peer" checked>
+                            <div class="p-4 rounded-xl border-2 border-purple-700 peer-checked:border-green-500 peer-checked:bg-green-500/10 transition text-center">
+                                <div class="text-3xl mb-2">🎮</div>
+                                <div class="font-medium">Demo Mode</div>
+                                <div class="text-xs text-purple-400">ไม่ต้องใช้ API Key</div>
+                            </div>
+                        </label>
+                        <label class="provider-option cursor-pointer">
+                            <input type="radio" name="provider" value="huggingface" class="hidden peer">
+                            <div class="p-4 rounded-xl border-2 border-purple-700 peer-checked:border-green-500 peer-checked:bg-green-500/10 transition text-center">
+                                <div class="text-3xl mb-2">🤗</div>
+                                <div class="font-medium">Hugging Face</div>
+                                <div class="text-xs text-purple-400">ฟรี / ง่าย</div>
+                            </div>
+                        </label>
+                        <label class="provider-option cursor-pointer">
+                            <input type="radio" name="provider" value="google" class="hidden peer">
+                            <div class="p-4 rounded-xl border-2 border-purple-700 peer-checked:border-green-500 peer-checked:bg-green-500/10 transition text-center">
+                                <div class="text-3xl mb-2">☁️</div>
+                                <div class="font-medium">Google Vision</div>
+                                <div class="text-xs text-purple-400">แม่นยำสูง</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Hugging Face Settings -->
+                <div id="hfSettings" class="hidden space-y-4 p-4 bg-purple-800/30 rounded-xl">
+                    <h3 class="font-medium flex items-center gap-2">🤗 Hugging Face Settings</h3>
+                    <div>
+                        <label class="block text-sm text-purple-300 mb-2">API Token</label>
+                        <input type="password" id="hfToken" placeholder="hf_xxxxxxxxxx" class="w-full bg-purple-800 border border-purple-600 rounded-lg px-4 py-3 focus:border-green-500 focus:outline-none transition">
+                        <p class="text-xs text-purple-400 mt-2">รับ token ฟรีที่ <a href="https://huggingface.co/settings/tokens" target="_blank" class="text-green-400 hover:underline">huggingface.co/settings/tokens</a></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-purple-300 mb-2">Model (Object Detection)</label>
+                        <select id="hfModel" class="w-full bg-purple-800 border border-purple-600 rounded-lg px-4 py-3 focus:border-green-500 focus:outline-none transition">
+                            <option value="facebook/detr-resnet-50">DETR ResNet-50 (แนะนำ)</option>
+                            <option value="hustvl/yolos-tiny">YOLOS Tiny (เร็ว)</option>
+                            <option value="facebook/detr-resnet-101">DETR ResNet-101 (แม่นยำ)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Google Vision Settings -->
+                <div id="googleSettings" class="hidden space-y-4 p-4 bg-purple-800/30 rounded-xl">
+                    <h3 class="font-medium flex items-center gap-2">☁️ Google Cloud Vision Settings</h3>
+                    <div>
+                        <label class="block text-sm text-purple-300 mb-2">API Key</label>
+                        <input type="password" id="googleApiKey" placeholder="AIzaxxxxxxxxxx" class="w-full bg-purple-800 border border-purple-600 rounded-lg px-4 py-3 focus:border-green-500 focus:outline-none transition">
+                        <p class="text-xs text-purple-400 mt-2">สร้าง API Key ที่ <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-green-400 hover:underline">Google Cloud Console</a></p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="googleLogoDetection" checked class="w-5 h-5 rounded bg-purple-800 border-purple-600">
+                        <label for="googleLogoDetection" class="text-sm">เปิดใช้ Logo Detection</label>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="googleLabelDetection" checked class="w-5 h-5 rounded bg-purple-800 border-purple-600">
+                        <label for="googleLabelDetection" class="text-sm">เปิดใช้ Label Detection</label>
+                    </div>
+                </div>
+
+                <!-- Custom Prohibited Keywords -->
+                <div class="space-y-4 p-4 bg-purple-800/30 rounded-xl">
+                    <h3 class="font-medium flex items-center gap-2">🚫 คำค้นหา Logo ต้องห้าม</h3>
+                    <textarea id="prohibitedKeywords" rows="4" class="w-full bg-purple-800 border border-purple-600 rounded-lg px-4 py-3 focus:border-green-500 focus:outline-none transition text-sm" placeholder="UEFA, Champions League, FIFA, La Liga...">UEFA, Champions League, UCL, FIFA, La Liga, Serie A, Bundesliga, Ligue 1, Europa League, Heineken, Gazprom</textarea>
+                    <p class="text-xs text-purple-400">คั่นด้วยเครื่องหมาย comma (,)</p>
+                </div>
+
+                <!-- Confidence Threshold -->
+                <div class="space-y-4 p-4 bg-purple-800/30 rounded-xl">
+                    <h3 class="font-medium flex items-center gap-2">📊 Confidence Threshold</h3>
+                    <div class="flex items-center gap-4">
+                        <input type="range" id="confidenceThreshold" min="30" max="90" value="50" class="flex-1 h-2 bg-purple-700 rounded-lg appearance-none cursor-pointer">
+                        <span id="thresholdValue" class="text-green-400 font-bold w-16 text-right">50%</span>
+                    </div>
+                    <p class="text-xs text-purple-400">แสดงผลเฉพาะ detection ที่มี confidence สูงกว่าค่านี้</p>
+                </div>
+            </div>
+            <div class="p-6 border-t border-purple-700 flex gap-3">
+                <button onclick="saveSettings()" class="flex-1 bg-gradient-to-r from-purple-600 to-green-500 py-3 rounded-xl font-medium hover:opacity-90 transition">
+                    💾 บันทึกการตั้งค่า
+                </button>
+                <button onclick="testApi()" class="px-6 py-3 bg-purple-800 rounded-xl font-medium hover:bg-purple-700 transition">
+                    🧪 ทดสอบ
+                </button>
+            </div>
+        </div>
+    </div>
 
     <main class="max-w-6xl mx-auto p-4 md:p-8">
         <!-- Prohibited Logos Reference -->
@@ -146,7 +199,6 @@
 
         <!-- Upload Section -->
         <div class="grid md:grid-cols-2 gap-8">
-            <!-- Drop Zone -->
             <div class="space-y-4">
                 <h2 class="text-xl font-semibold">📤 อัปโหลดภาพ</h2>
                 <div id="dropZone" class="drop-zone rounded-2xl p-8 text-center cursor-pointer min-h-[300px] flex flex-col items-center justify-center bg-purple-900/20">
@@ -161,7 +213,6 @@
                 </div>
             </div>
 
-            <!-- Preview Section -->
             <div class="space-y-4">
                 <h2 class="text-xl font-semibold">🔍 ผลการตรวจสอบ</h2>
                 <div id="previewSection" class="bg-purple-900/20 rounded-2xl p-4 min-h-[300px] flex items-center justify-center border border-purple-700">
@@ -172,7 +223,7 @@
                     <div id="imageContainer" class="relative hidden w-full">
                         <img id="previewImage" class="w-full rounded-xl" alt="Preview">
                         <div id="scanLine" class="scan-line hidden"></div>
-                        <div id="detectionOverlay" class="absolute inset-0"></div>
+                        <div id="detectionOverlay" class="absolute inset-0 pointer-events-none"></div>
                     </div>
                 </div>
             </div>
@@ -183,38 +234,35 @@
             <button id="scanBtn" disabled class="bg-gradient-to-r from-purple-600 to-green-500 px-12 py-4 rounded-full text-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-green-500/30 transition transform hover:scale-105 disabled:hover:scale-100">
                 🔬 เริ่มตรวจสอบ
             </button>
+            <p id="scanStatus" class="text-purple-400 text-sm mt-2"></p>
         </div>
 
         <!-- Results Section -->
         <div id="resultsSection" class="hidden space-y-6">
-            <!-- Overall Status -->
-            <div id="overallStatus" class="rounded-2xl p-6 border-2">
-                <!-- Dynamic content -->
-            </div>
-
-            <!-- Detection Details -->
-            <div id="detectionDetails" class="space-y-4">
-                <!-- Dynamic content -->
-            </div>
-
-            <!-- Recommendations -->
+            <div id="overallStatus" class="rounded-2xl p-6 border-2"></div>
+            <div id="detectionDetails" class="space-y-4"></div>
             <div id="recommendations" class="bg-purple-900/30 rounded-2xl p-6 border border-purple-700">
                 <h3 class="text-lg font-semibold mb-4">💡 คำแนะนำ</h3>
-                <div id="recommendationsList" class="space-y-2">
-                    <!-- Dynamic content -->
-                </div>
+                <div id="recommendationsList" class="space-y-2"></div>
             </div>
+        </div>
+
+        <!-- Raw API Response (Debug) -->
+        <div id="debugSection" class="hidden mt-8">
+            <details class="bg-purple-900/30 rounded-2xl border border-purple-700">
+                <summary class="p-4 cursor-pointer font-medium">🔧 Raw API Response (Debug)</summary>
+                <pre id="rawResponse" class="p-4 text-xs overflow-x-auto text-purple-300 border-t border-purple-700"></pre>
+            </details>
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="mt-12 py-6 border-t border-purple-800 text-center text-purple-400 text-sm">
         <p>⚽ EPL Copyright Detector - สร้างด้วย ❤️ สำหรับทีมครีเอทีฟ</p>
         <p class="mt-2">⚠️ ระบบนี้เป็นเครื่องมือช่วยตรวจสอบเบื้องต้น กรุณาตรวจสอบเพิ่มเติมก่อนใช้งานจริง</p>
     </footer>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-8 right-8 transform translate-x-full transition-transform duration-300">
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-8 right-8 transform translate-x-full transition-transform duration-300 z-50">
         <div id="toastContent" class="px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
             <span id="toastIcon" class="text-2xl"></span>
             <span id="toastMessage"></span>
@@ -222,19 +270,41 @@
     </div>
 
     <script>
-        // Prohibited logos database (simulated)
-        const prohibitedLogos = [
-            { id: 'ucl', name: 'UEFA Champions League', severity: 'high', icon: '🏆' },
-            { id: 'uefa', name: 'UEFA Logo', severity: 'high', icon: '⭐' },
-            { id: 'fifa', name: 'FIFA Logo', severity: 'high', icon: '🌍' },
-            { id: 'laliga', name: 'La Liga', severity: 'medium', icon: '🎯' },
-            { id: 'seriea', name: 'Serie A', severity: 'medium', icon: '🦁' },
-            { id: 'sponsor', name: 'Prohibited Sponsor', severity: 'medium', icon: '🍺' },
-            { id: 'bundesliga', name: 'Bundesliga', severity: 'medium', icon: '🇩🇪' },
-            { id: 'ligue1', name: 'Ligue 1', severity: 'medium', icon: '🇫🇷' }
-        ];
+        // ============ Configuration ============
+        const CONFIG = {
+            provider: 'demo',
+            huggingface: {
+                token: '',
+                model: 'facebook/detr-resnet-50'
+            },
+            google: {
+                apiKey: '',
+                logoDetection: true,
+                labelDetection: true
+            },
+            prohibitedKeywords: [
+                'UEFA', 'Champions League', 'UCL', 'FIFA', 'La Liga', 'Serie A',
+                'Bundesliga', 'Ligue 1', 'Europa League', 'Heineken', 'Gazprom',
+                'starball', 'champions', 'europa', 'world cup'
+            ],
+            confidenceThreshold: 50
+        };
 
-        // DOM Elements
+        // Prohibited logos database
+        const PROHIBITED_LOGOS = {
+            'uefa': { name: 'UEFA', severity: 'high', icon: '⭐', keywords: ['uefa', 'union of european'] },
+            'ucl': { name: 'UEFA Champions League', severity: 'high', icon: '🏆', keywords: ['champions league', 'ucl', 'starball', 'champions'] },
+            'fifa': { name: 'FIFA', severity: 'high', icon: '🌍', keywords: ['fifa', 'world cup'] },
+            'laliga': { name: 'La Liga', severity: 'medium', icon: '🎯', keywords: ['la liga', 'laliga', 'spanish league'] },
+            'seriea': { name: 'Serie A', severity: 'medium', icon: '🦁', keywords: ['serie a', 'seriea', 'italian league'] },
+            'bundesliga': { name: 'Bundesliga', severity: 'medium', icon: '🇩🇪', keywords: ['bundesliga', 'german league'] },
+            'ligue1': { name: 'Ligue 1', severity: 'medium', icon: '🇫🇷', keywords: ['ligue 1', 'ligue1', 'french league'] },
+            'europaleague': { name: 'Europa League', severity: 'high', icon: '🏅', keywords: ['europa league', 'uel'] },
+            'heineken': { name: 'Heineken (UCL Sponsor)', severity: 'high', icon: '🍺', keywords: ['heineken'] },
+            'gazprom': { name: 'Gazprom (UCL Sponsor)', severity: 'high', icon: '⛽', keywords: ['gazprom'] }
+        };
+
+        // ============ DOM Elements ============
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const previewImage = document.getElementById('previewImage');
@@ -244,93 +314,300 @@
         const scanLine = document.getElementById('scanLine');
         const detectionOverlay = document.getElementById('detectionOverlay');
         const resultsSection = document.getElementById('resultsSection');
+        const settingsModal = document.getElementById('settingsModal');
+        const scanStatus = document.getElementById('scanStatus');
 
-        let currentImage = null;
+        let currentImageBase64 = null;
+        let currentImageBlob = null;
 
-        // Drag and Drop
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
+        // ============ Initialize ============
+        function init() {
+            loadSettings();
+            setupEventListeners();
+            updateApiStatus();
+            console.log('🔍 EPL Copyright Detector v2.0 loaded!');
+        }
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
+        function setupEventListeners() {
+            // Drag and drop
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files[0]?.type.startsWith('image/')) handleFile(e.dataTransfer.files[0]);
+            });
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                handleFile(file);
-            }
-        });
+            // Scan button
+            scanBtn.addEventListener('click', startScan);
 
-        dropZone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files[0]) {
-                handleFile(e.target.files[0]);
-            }
-        });
+            // Provider selection
+            document.querySelectorAll('input[name="provider"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    document.getElementById('hfSettings').classList.toggle('hidden', e.target.value !== 'huggingface');
+                    document.getElementById('googleSettings').classList.toggle('hidden', e.target.value !== 'google');
+                });
+            });
 
+            // Confidence slider
+            document.getElementById('confidenceThreshold').addEventListener('input', (e) => {
+                document.getElementById('thresholdValue').textContent = e.target.value + '%';
+            });
+        }
+
+        // ============ File Handling ============
         function handleFile(file) {
             if (file.size > 10 * 1024 * 1024) {
                 showToast('❌', 'ไฟล์ใหญ่เกินไป (สูงสุด 10MB)', 'error');
                 return;
             }
 
+            currentImageBlob = file;
             const reader = new FileReader();
             reader.onload = (e) => {
-                currentImage = e.target.result;
-                previewImage.src = currentImage;
+                currentImageBase64 = e.target.result;
+                previewImage.src = currentImageBase64;
                 imageContainer.classList.remove('hidden');
                 placeholderText.classList.add('hidden');
                 scanBtn.disabled = false;
                 detectionOverlay.innerHTML = '';
                 resultsSection.classList.add('hidden');
+                document.getElementById('debugSection').classList.add('hidden');
                 showToast('✅', 'อัปโหลดสำเร็จ! พร้อมตรวจสอบ', 'success');
             };
             reader.readAsDataURL(file);
         }
 
-        // Scan functionality
-        scanBtn.addEventListener('click', startScan);
-
+        // ============ Scanning ============
         async function startScan() {
             scanBtn.disabled = true;
-            scanBtn.textContent = '🔄 กำลังตรวจสอบ...';
+            scanBtn.innerHTML = '<span class="inline-block spinner">🔄</span> กำลังตรวจสอบ...';
             scanLine.classList.remove('hidden');
             detectionOverlay.innerHTML = '';
             resultsSection.classList.add('hidden');
+            scanStatus.textContent = '';
 
-            showToast('🔍', 'กำลังวิเคราะห์ภาพด้วย AI...', 'info');
+            try {
+                let detections;
 
-            // Simulate AI processing
-            await sleep(1500);
+                switch (CONFIG.provider) {
+                    case 'huggingface':
+                        scanStatus.textContent = '🤗 กำลังส่งภาพไป Hugging Face...';
+                        detections = await detectWithHuggingFace();
+                        break;
+                    case 'google':
+                        scanStatus.textContent = '☁️ กำลังส่งภาพไป Google Vision...';
+                        detections = await detectWithGoogleVision();
+                        break;
+                    default:
+                        scanStatus.textContent = '🎮 Demo Mode - จำลองการตรวจจับ...';
+                        await sleep(1500);
+                        detections = simulateDetection();
+                }
 
-            // Simulate detection results
-            const detections = simulateDetection();
+                await showDetections(detections);
 
-            // Show results
-            await showDetections(detections);
+            } catch (error) {
+                console.error('Scan error:', error);
+                showToast('❌', `เกิดข้อผิดพลาด: ${error.message}`, 'error');
+                scanStatus.textContent = `❌ Error: ${error.message}`;
+            }
 
             scanLine.classList.add('hidden');
             scanBtn.disabled = false;
             scanBtn.textContent = '🔬 เริ่มตรวจสอบ';
         }
 
-        function simulateDetection() {
-            // Simulate random detections for demo
-            const detections = [];
-            const numDetections = Math.floor(Math.random() * 4); // 0-3 detections
+        // ============ Hugging Face Detection ============
+        async function detectWithHuggingFace() {
+            if (!CONFIG.huggingface.token) {
+                throw new Error('กรุณาใส่ Hugging Face Token ในการตั้งค่า');
+            }
 
+            const response = await fetch(
+                `https://api-inference.huggingface.co/models/${CONFIG.huggingface.model}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${CONFIG.huggingface.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: currentImageBlob
+                }
+            );
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.error || `API Error: ${response.status}`);
+            }
+
+            const results = await response.json();
+            showDebugResponse(results);
+            return processHuggingFaceResults(results);
+        }
+
+        function processHuggingFaceResults(results) {
+            const detections = [];
+            const imgWidth = previewImage.naturalWidth;
+            const imgHeight = previewImage.naturalHeight;
+
+            for (const result of results) {
+                const label = result.label?.toLowerCase() || '';
+                const score = Math.round((result.score || 0) * 100);
+
+                if (score < CONFIG.confidenceThreshold) continue;
+
+                // Check if matches prohibited keywords
+                const matchedLogo = findMatchingLogo(label);
+
+                if (matchedLogo || isProhibitedKeyword(label)) {
+                    const box = result.box || {};
+                    detections.push({
+                        logo: matchedLogo || { name: label, severity: 'medium', icon: '⚠️' },
+                        confidence: score,
+                        label: label,
+                        location: {
+                            x: ((box.xmin || 0) / imgWidth) * 100,
+                            y: ((box.ymin || 0) / imgHeight) * 100,
+                            width: (((box.xmax || 0) - (box.xmin || 0)) / imgWidth) * 100,
+                            height: (((box.ymax || 0) - (box.ymin || 0)) / imgHeight) * 100
+                        }
+                    });
+                }
+            }
+
+            return detections;
+        }
+
+        // ============ Google Vision Detection ============
+        async function detectWithGoogleVision() {
+            if (!CONFIG.google.apiKey) {
+                throw new Error('กรุณาใส่ Google API Key ในการตั้งค่า');
+            }
+
+            const imageContent = currentImageBase64.replace(/^data:image\/\w+;base64,/, '');
+
+            const features = [];
+            if (CONFIG.google.logoDetection) features.push({ type: 'LOGO_DETECTION', maxResults: 20 });
+            if (CONFIG.google.labelDetection) features.push({ type: 'LABEL_DETECTION', maxResults: 20 });
+            features.push({ type: 'TEXT_DETECTION', maxResults: 10 });
+
+            const response = await fetch(
+                `https://vision.googleapis.com/v1/images:annotate?key=${CONFIG.google.apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requests: [{
+                            image: { content: imageContent },
+                            features: features
+                        }]
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.error?.message || `API Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            showDebugResponse(data);
+            return processGoogleVisionResults(data);
+        }
+
+        function processGoogleVisionResults(data) {
+            const detections = [];
+            const result = data.responses?.[0] || {};
+            const imgWidth = previewImage.naturalWidth;
+            const imgHeight = previewImage.naturalHeight;
+
+            // Process logo annotations
+            for (const logo of (result.logoAnnotations || [])) {
+                const score = Math.round((logo.score || 0) * 100);
+                if (score < CONFIG.confidenceThreshold) continue;
+
+                const desc = logo.description?.toLowerCase() || '';
+                const matchedLogo = findMatchingLogo(desc);
+
+                if (matchedLogo || isProhibitedKeyword(desc)) {
+                    const vertices = logo.boundingPoly?.vertices || [];
+                    const bounds = getBoundingBox(vertices, imgWidth, imgHeight);
+
+                    detections.push({
+                        logo: matchedLogo || { name: logo.description, severity: 'high', icon: '🏷️' },
+                        confidence: score,
+                        label: logo.description,
+                        location: bounds
+                    });
+                }
+            }
+
+            // Process label annotations
+            for (const label of (result.labelAnnotations || [])) {
+                const score = Math.round((label.score || 0) * 100);
+                if (score < CONFIG.confidenceThreshold) continue;
+
+                const desc = label.description?.toLowerCase() || '';
+                const matchedLogo = findMatchingLogo(desc);
+
+                if (matchedLogo || isProhibitedKeyword(desc)) {
+                    detections.push({
+                        logo: matchedLogo || { name: label.description, severity: 'medium', icon: '🏷️' },
+                        confidence: score,
+                        label: label.description,
+                        location: { x: 10, y: 10, width: 20, height: 20 } // Default location for labels
+                    });
+                }
+            }
+
+            // Process text annotations for brand names
+            const fullText = result.textAnnotations?.[0]?.description?.toLowerCase() || '';
+            for (const keyword of CONFIG.prohibitedKeywords) {
+                if (fullText.includes(keyword.toLowerCase())) {
+                    const matchedLogo = findMatchingLogo(keyword);
+                    detections.push({
+                        logo: matchedLogo || { name: keyword, severity: 'medium', icon: '📝' },
+                        confidence: 85,
+                        label: `Text: "${keyword}"`,
+                        location: { x: 50, y: 80, width: 30, height: 10 }
+                    });
+                }
+            }
+
+            return detections;
+        }
+
+        function getBoundingBox(vertices, imgWidth, imgHeight) {
+            if (!vertices.length) return { x: 0, y: 0, width: 20, height: 20 };
+
+            const xs = vertices.map(v => v.x || 0);
+            const ys = vertices.map(v => v.y || 0);
+
+            return {
+                x: (Math.min(...xs) / imgWidth) * 100,
+                y: (Math.min(...ys) / imgHeight) * 100,
+                width: ((Math.max(...xs) - Math.min(...xs)) / imgWidth) * 100,
+                height: ((Math.max(...ys) - Math.min(...ys)) / imgHeight) * 100
+            };
+        }
+
+        // ============ Demo Simulation ============
+        function simulateDetection() {
+            const detections = [];
+            const numDetections = Math.floor(Math.random() * 4);
+
+            const logoKeys = Object.keys(PROHIBITED_LOGOS);
             for (let i = 0; i < numDetections; i++) {
-                const logo = prohibitedLogos[Math.floor(Math.random() * prohibitedLogos.length)];
+                const key = logoKeys[Math.floor(Math.random() * logoKeys.length)];
                 detections.push({
-                    logo: logo,
-                    confidence: 60 + Math.floor(Math.random() * 35), // 60-95%
+                    logo: PROHIBITED_LOGOS[key],
+                    confidence: 60 + Math.floor(Math.random() * 35),
+                    label: PROHIBITED_LOGOS[key].name,
                     location: {
-                        x: 10 + Math.random() * 60, // percentage
+                        x: 10 + Math.random() * 60,
                         y: 10 + Math.random() * 60,
                         width: 15 + Math.random() * 15,
                         height: 15 + Math.random() * 15
@@ -341,15 +618,37 @@
             return detections;
         }
 
+        // ============ Helper Functions ============
+        function findMatchingLogo(text) {
+            const lower = text.toLowerCase();
+            for (const [key, logo] of Object.entries(PROHIBITED_LOGOS)) {
+                for (const keyword of logo.keywords) {
+                    if (lower.includes(keyword)) return logo;
+                }
+            }
+            return null;
+        }
+
+        function isProhibitedKeyword(text) {
+            const lower = text.toLowerCase();
+            return CONFIG.prohibitedKeywords.some(k => lower.includes(k.toLowerCase()));
+        }
+
+        function showDebugResponse(data) {
+            document.getElementById('debugSection').classList.remove('hidden');
+            document.getElementById('rawResponse').textContent = JSON.stringify(data, null, 2);
+        }
+
+        // ============ Display Results ============
         async function showDetections(detections) {
             resultsSection.classList.remove('hidden');
+            scanStatus.textContent = `✅ ตรวจสอบเสร็จสิ้น - พบ ${detections.length} รายการ`;
 
             const overallStatus = document.getElementById('overallStatus');
             const detectionDetails = document.getElementById('detectionDetails');
             const recommendationsList = document.getElementById('recommendationsList');
 
             if (detections.length === 0) {
-                // All clear!
                 overallStatus.className = 'rounded-2xl p-6 border-2 border-green-500 bg-green-500/10 glow-green alert-card';
                 overallStatus.innerHTML = `
                     <div class="flex items-center gap-4">
@@ -357,26 +656,15 @@
                         <div>
                             <h3 class="text-2xl font-bold text-green-400">ผ่านการตรวจสอบ!</h3>
                             <p class="text-green-300">ไม่พบ logo หรือเครื่องหมายที่ละเมิดลิขสิทธิ์ในภาพนี้</p>
-                            <p class="text-sm text-purple-400 mt-2">ความมั่นใจโดยรวม: 98%</p>
+                            <p class="text-sm text-purple-400 mt-2">Provider: ${CONFIG.provider.toUpperCase()} | Threshold: ${CONFIG.confidenceThreshold}%</p>
                         </div>
-                    </div>
-                `;
-
+                    </div>`;
                 detectionDetails.innerHTML = '';
                 recommendationsList.innerHTML = `
-                    <div class="flex items-start gap-3 text-green-300">
-                        <span>✓</span>
-                        <span>ภาพนี้พร้อมใช้งานสำหรับโปรโมท EPL</span>
-                    </div>
-                    <div class="flex items-start gap-3 text-purple-300">
-                        <span>💡</span>
-                        <span>แนะนำให้ตรวจสอบครั้งสุดท้ายด้วยตาเปล่าก่อนเผยแพร่</span>
-                    </div>
-                `;
-
+                    <div class="flex items-start gap-3 text-green-300"><span>✓</span><span>ภาพนี้พร้อมใช้งานสำหรับโปรโมท EPL</span></div>
+                    <div class="flex items-start gap-3 text-purple-300"><span>💡</span><span>แนะนำให้ตรวจสอบครั้งสุดท้ายด้วยตาเปล่าก่อนเผยแพร่</span></div>`;
                 showToast('✅', 'ไม่พบการละเมิดลิขสิทธิ์!', 'success');
             } else {
-                // Found violations!
                 overallStatus.className = 'rounded-2xl p-6 border-2 border-red-500 bg-red-500/10 glow-red alert-card';
                 overallStatus.innerHTML = `
                     <div class="flex items-center gap-4">
@@ -384,131 +672,211 @@
                         <div>
                             <h3 class="text-2xl font-bold text-red-400">พบ ${detections.length} รายการที่ต้องแก้ไข!</h3>
                             <p class="text-red-300">กรุณาตรวจสอบและแก้ไขก่อนใช้งาน</p>
+                            <p class="text-sm text-purple-400 mt-2">Provider: ${CONFIG.provider.toUpperCase()} | Threshold: ${CONFIG.confidenceThreshold}%</p>
                         </div>
-                    </div>
-                `;
+                    </div>`;
 
-                // Draw detection boxes on image
-                detections.forEach((detection, index) => {
+                // Draw detection boxes
+                detections.forEach((detection) => {
                     const box = document.createElement('div');
                     box.className = 'detection-box';
-                    box.style.left = detection.location.x + '%';
-                    box.style.top = detection.location.y + '%';
-                    box.style.width = detection.location.width + '%';
-                    box.style.height = detection.location.height + '%';
-                    box.style.borderColor = detection.logo.severity === 'high' ? '#ff0055' : '#ffaa00';
-                    box.style.backgroundColor = detection.logo.severity === 'high' ? 'rgba(255,0,85,0.2)' : 'rgba(255,170,0,0.2)';
+                    box.style.cssText = `
+                        left: ${detection.location.x}%;
+                        top: ${detection.location.y}%;
+                        width: ${Math.max(detection.location.width, 5)}%;
+                        height: ${Math.max(detection.location.height, 5)}%;
+                        border-color: ${detection.logo.severity === 'high' ? '#ff0055' : '#ffaa00'};
+                        background-color: ${detection.logo.severity === 'high' ? 'rgba(255,0,85,0.2)' : 'rgba(255,170,0,0.2)'};
+                    `;
 
-                    // Add label
                     const label = document.createElement('div');
-                    label.className = 'absolute -top-8 left-0 px-2 py-1 rounded text-xs whitespace-nowrap';
-                    label.style.backgroundColor = detection.logo.severity === 'high' ? '#ff0055' : '#ffaa00';
-                    label.style.color = '#fff';
+                    label.className = 'absolute -top-8 left-0 px-2 py-1 rounded text-xs whitespace-nowrap font-medium';
+                    label.style.cssText = `background-color: ${detection.logo.severity === 'high' ? '#ff0055' : '#ffaa00'}; color: #fff;`;
                     label.textContent = `${detection.logo.icon} ${detection.confidence}%`;
                     box.appendChild(label);
 
                     detectionOverlay.appendChild(box);
                 });
 
-                // Show detection cards
-                detectionDetails.innerHTML = detections.map((detection, index) => `
-                    <div class="alert-card bg-purple-900/50 rounded-xl p-4 border ${detection.logo.severity === 'high' ? 'border-red-500' : 'border-yellow-500'}">
+                detectionDetails.innerHTML = detections.map(d => `
+                    <div class="alert-card bg-purple-900/50 rounded-xl p-4 border ${d.logo.severity === 'high' ? 'border-red-500' : 'border-yellow-500'}">
                         <div class="flex items-start justify-between">
                             <div class="flex items-center gap-3">
-                                <span class="text-4xl">${detection.logo.icon}</span>
+                                <span class="text-4xl">${d.logo.icon}</span>
                                 <div>
-                                    <h4 class="font-semibold ${detection.logo.severity === 'high' ? 'text-red-400' : 'text-yellow-400'}">
-                                        ${detection.logo.name}
-                                    </h4>
-                                    <p class="text-sm text-purple-300">
-                                        ${detection.logo.severity === 'high' ? '🔴 ความรุนแรงสูง' : '🟡 ความรุนแรงปานกลาง'}
-                                    </p>
+                                    <h4 class="font-semibold ${d.logo.severity === 'high' ? 'text-red-400' : 'text-yellow-400'}">${d.logo.name}</h4>
+                                    <p class="text-sm text-purple-300">${d.logo.severity === 'high' ? '🔴 ความรุนแรงสูง' : '🟡 ความรุนแรงปานกลาง'}</p>
+                                    <p class="text-xs text-purple-400 mt-1">Label: ${d.label}</p>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-bold ${detection.confidence > 80 ? 'text-red-400' : 'text-yellow-400'}">
-                                    ${detection.confidence}%
-                                </div>
+                                <div class="text-2xl font-bold ${d.confidence > 80 ? 'text-red-400' : 'text-yellow-400'}">${d.confidence}%</div>
                                 <div class="text-xs text-purple-400">ความมั่นใจ</div>
                             </div>
                         </div>
                         <div class="mt-3">
                             <div class="h-2 bg-purple-800 rounded-full overflow-hidden">
-                                <div class="confidence-bar h-full rounded-full ${detection.confidence > 80 ? 'bg-red-500' : 'bg-yellow-500'}"
-                                     style="width: ${detection.confidence}%"></div>
+                                <div class="confidence-bar h-full rounded-full ${d.confidence > 80 ? 'bg-red-500' : 'bg-yellow-500'}" style="width: ${d.confidence}%"></div>
                             </div>
                         </div>
-                        <div class="mt-3 text-sm text-purple-300">
-                            📍 ตำแหน่ง: บริเวณ ${getLocationDescription(detection.location)}
-                        </div>
-                    </div>
-                `).join('');
+                        <div class="mt-3 text-sm text-purple-300">📍 ตำแหน่ง: ${getLocationDescription(d.location)}</div>
+                    </div>`).join('');
 
                 recommendationsList.innerHTML = `
-                    <div class="flex items-start gap-3 text-red-300">
-                        <span>❌</span>
-                        <span>ห้ามใช้ภาพนี้โดยไม่แก้ไข - อาจเกิดปัญหาลิขสิทธิ์</span>
-                    </div>
-                    <div class="flex items-start gap-3 text-yellow-300">
-                        <span>✂️</span>
-                        <span>ครอปหรือปิดบังบริเวณที่แสดงไว้</span>
-                    </div>
-                    <div class="flex items-start gap-3 text-purple-300">
-                        <span>🔄</span>
-                        <span>ใช้ภาพอื่นที่ไม่มี logo ต้องห้าม</span>
-                    </div>
-                    <div class="flex items-start gap-3 text-purple-300">
-                        <span>👀</span>
-                        <span>ส่งให้ทีมกฎหมายตรวจสอบเพิ่มเติม</span>
-                    </div>
-                `;
+                    <div class="flex items-start gap-3 text-red-300"><span>❌</span><span>ห้ามใช้ภาพนี้โดยไม่แก้ไข - อาจเกิดปัญหาลิขสิทธิ์</span></div>
+                    <div class="flex items-start gap-3 text-yellow-300"><span>✂️</span><span>ครอปหรือปิดบังบริเวณที่แสดงไว้</span></div>
+                    <div class="flex items-start gap-3 text-purple-300"><span>🔄</span><span>ใช้ภาพอื่นที่ไม่มี logo ต้องห้าม</span></div>
+                    <div class="flex items-start gap-3 text-purple-300"><span>👀</span><span>ส่งให้ทีมกฎหมายตรวจสอบเพิ่มเติม</span></div>`;
 
                 showToast('⚠️', `พบ ${detections.length} รายการที่ต้องแก้ไข!`, 'warning');
             }
         }
 
-        function getLocationDescription(location) {
-            const x = location.x + location.width / 2;
-            const y = location.y + location.height / 2;
-
-            let horizontal = x < 33 ? 'ซ้าย' : x > 66 ? 'ขวา' : 'กลาง';
-            let vertical = y < 33 ? 'บน' : y > 66 ? 'ล่าง' : 'กลาง';
-
-            if (horizontal === 'กลาง' && vertical === 'กลาง') return 'กลางภาพ';
-            return `${vertical}${horizontal}`;
+        function getLocationDescription(loc) {
+            const x = loc.x + loc.width / 2;
+            const y = loc.y + loc.height / 2;
+            const h = x < 33 ? 'ซ้าย' : x > 66 ? 'ขวา' : 'กลาง';
+            const v = y < 33 ? 'บน' : y > 66 ? 'ล่าง' : 'กลาง';
+            return h === 'กลาง' && v === 'กลาง' ? 'กลางภาพ' : `${v}${h}`;
         }
 
+        // ============ Settings ============
+        function openSettings() {
+            settingsModal.classList.remove('hidden');
+            settingsModal.classList.add('flex');
+
+            // Load current values
+            document.querySelector(`input[name="provider"][value="${CONFIG.provider}"]`).checked = true;
+            document.getElementById('hfToken').value = CONFIG.huggingface.token;
+            document.getElementById('hfModel').value = CONFIG.huggingface.model;
+            document.getElementById('googleApiKey').value = CONFIG.google.apiKey;
+            document.getElementById('googleLogoDetection').checked = CONFIG.google.logoDetection;
+            document.getElementById('googleLabelDetection').checked = CONFIG.google.labelDetection;
+            document.getElementById('prohibitedKeywords').value = CONFIG.prohibitedKeywords.join(', ');
+            document.getElementById('confidenceThreshold').value = CONFIG.confidenceThreshold;
+            document.getElementById('thresholdValue').textContent = CONFIG.confidenceThreshold + '%';
+
+            // Show relevant settings
+            document.getElementById('hfSettings').classList.toggle('hidden', CONFIG.provider !== 'huggingface');
+            document.getElementById('googleSettings').classList.toggle('hidden', CONFIG.provider !== 'google');
+        }
+
+        function closeSettings() {
+            settingsModal.classList.add('hidden');
+            settingsModal.classList.remove('flex');
+        }
+
+        function saveSettings() {
+            CONFIG.provider = document.querySelector('input[name="provider"]:checked').value;
+            CONFIG.huggingface.token = document.getElementById('hfToken').value.trim();
+            CONFIG.huggingface.model = document.getElementById('hfModel').value;
+            CONFIG.google.apiKey = document.getElementById('googleApiKey').value.trim();
+            CONFIG.google.logoDetection = document.getElementById('googleLogoDetection').checked;
+            CONFIG.google.labelDetection = document.getElementById('googleLabelDetection').checked;
+            CONFIG.prohibitedKeywords = document.getElementById('prohibitedKeywords').value.split(',').map(k => k.trim()).filter(k => k);
+            CONFIG.confidenceThreshold = parseInt(document.getElementById('confidenceThreshold').value);
+
+            localStorage.setItem('eplDetectorConfig', JSON.stringify(CONFIG));
+            updateApiStatus();
+            closeSettings();
+            showToast('✅', 'บันทึกการตั้งค่าเรียบร้อย', 'success');
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('eplDetectorConfig');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    Object.assign(CONFIG, parsed);
+                } catch (e) {
+                    console.error('Failed to load settings:', e);
+                }
+            }
+        }
+
+        function updateApiStatus() {
+            const dot = document.getElementById('apiStatusDot');
+            const text = document.getElementById('apiStatusText');
+
+            switch (CONFIG.provider) {
+                case 'huggingface':
+                    dot.className = 'w-2 h-2 rounded-full ' + (CONFIG.huggingface.token ? 'bg-green-400 animate-pulse' : 'bg-yellow-400');
+                    text.textContent = CONFIG.huggingface.token ? '🤗 HuggingFace' : '🤗 ต้องใส่ Token';
+                    break;
+                case 'google':
+                    dot.className = 'w-2 h-2 rounded-full ' + (CONFIG.google.apiKey ? 'bg-green-400 animate-pulse' : 'bg-yellow-400');
+                    text.textContent = CONFIG.google.apiKey ? '☁️ Google Vision' : '☁️ ต้องใส่ API Key';
+                    break;
+                default:
+                    dot.className = 'w-2 h-2 bg-blue-400 rounded-full animate-pulse';
+                    text.textContent = '🎮 Demo Mode';
+            }
+        }
+
+        async function testApi() {
+            const provider = document.querySelector('input[name="provider"]:checked').value;
+
+            if (provider === 'demo') {
+                showToast('🎮', 'Demo Mode ไม่ต้องทดสอบ', 'info');
+                return;
+            }
+
+            showToast('🧪', 'กำลังทดสอบการเชื่อมต่อ...', 'info');
+
+            try {
+                if (provider === 'huggingface') {
+                    const token = document.getElementById('hfToken').value.trim();
+                    if (!token) throw new Error('กรุณาใส่ Token ก่อน');
+
+                    const response = await fetch('https://huggingface.co/api/whoami-v2', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Token ไม่ถูกต้อง');
+                    const data = await response.json();
+                    showToast('✅', `เชื่อมต่อสำเร็จ! (${data.name})`, 'success');
+
+                } else if (provider === 'google') {
+                    const apiKey = document.getElementById('googleApiKey').value.trim();
+                    if (!apiKey) throw new Error('กรุณาใส่ API Key ก่อน');
+
+                    // Test with a simple request
+                    const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ requests: [] })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error?.message || 'API Key ไม่ถูกต้อง');
+                    }
+                    showToast('✅', 'เชื่อมต่อ Google Vision สำเร็จ!', 'success');
+                }
+            } catch (error) {
+                showToast('❌', error.message, 'error');
+            }
+        }
+
+        // ============ Utilities ============
         function showToast(icon, message, type) {
             const toast = document.getElementById('toast');
-            const toastContent = document.getElementById('toastContent');
-            const toastIcon = document.getElementById('toastIcon');
-            const toastMessage = document.getElementById('toastMessage');
+            const content = document.getElementById('toastContent');
+            document.getElementById('toastIcon').textContent = icon;
+            document.getElementById('toastMessage').textContent = message;
 
-            toastIcon.textContent = icon;
-            toastMessage.textContent = message;
-
-            const colors = {
-                success: 'bg-green-600',
-                error: 'bg-red-600',
-                warning: 'bg-yellow-600',
-                info: 'bg-blue-600'
-            };
-
-            toastContent.className = `px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${colors[type]}`;
-
+            const colors = { success: 'bg-green-600', error: 'bg-red-600', warning: 'bg-yellow-600', info: 'bg-blue-600' };
+            content.className = `px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${colors[type]}`;
             toast.classList.remove('translate-x-full');
-
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-            }, 3000);
+            setTimeout(() => toast.classList.add('translate-x-full'), 3000);
         }
 
         function sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        // Initialize
-        console.log('🔍 EPL Copyright Detector loaded!');
+        // Start
+        init();
     </script>
 </body>
 </html>
